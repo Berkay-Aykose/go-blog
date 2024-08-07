@@ -1,0 +1,16 @@
+{{ define "detail"}}
+<!DOCTYPE html>
+<html lang="tr">
+
+{{ template "head" }}
+
+<body>
+    {{ template "navbar" }}
+    {{ template "content" . }}
+    
+    {{ template "footer" }}
+    {{ template "script" }}
+</body>
+
+</html>
+{{ end }}
