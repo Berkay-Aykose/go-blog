@@ -1,50 +1,63 @@
 package config
 
 import (
-	admin "goblog/admin/controllers"
+	"goblog/admin/controllers"
 	site "goblog/site/controllers"
-	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/gin-gonic/gin"
 )
 
-func Routes() *httprouter.Router {
-	r := httprouter.New()
-	//ADMİN index
-	r.GET("/admin", admin.Dashboard{}.Index)
-	//ADMİN blog ekleme sayfası
-	r.GET("/admin/yeni-ekle", admin.Dashboard{}.NewItem)
-	//blog ekle form
-	r.POST("/admin/add", admin.Dashboard{}.Add)
-	//ADMİN blog düzenle
-	r.GET("/admin/edit/:id", admin.Dashboard{}.Edit)
-	//ADMİN blog sil
-	r.GET("/admin/delete/:id", admin.Dashboard{}.Delete)
-	//ADMİN güncelle
-	r.POST("/admin/update/:id", admin.Dashboard{}.Update)
+func Routes() *gin.Engine {
+	r := gin.Default()
 
-	//Userops indexLogin
-	r.GET("/admin/login", admin.Userops{}.Index)
-	//AdMİN FORM login
-	r.POST("/admin/do-login", admin.Userops{}.Login)
-	//AdMİN session Logout
-	r.GET("/admin/logout", admin.Userops{}.Logout)
+	// Serve static files
+	r.Static("/admin/assets", "./admin/assets")
+	r.Static("/site/assets", "./site/assets")
+	r.Static("/uploads", "./uploads")
 
-	//Admin categories index
-	r.GET("/admin/kategoriler/", admin.Categories{}.Index)
-	//Admin kategori ekleme
-	r.POST("/admin/kategoriler/add", admin.Categories{}.Add)
-	//Admin kategori silme
-	r.GET("/admin/kategoriler/delete/:id", admin.Categories{}.Delete)
+	// Admin routes
+	adminRoutes := r.Group("/admin")
+	{
+		admin := controllers.Dashboard{}
+		userops := controllers.Userops{}
+		categories := controllers.Categories{}
 
-	//Anasayfa
-	r.GET("/", site.Homepage{}.Index)
-	//Anasayfa yazılara gitme details
-	r.GET("/yazilar/:slug", site.Homepage{}.Detail)
+		// Admin dashboard
+		adminRoutes.GET("/", admin.Index)
+		// Admin add new item page
+		adminRoutes.GET("/yeni-ekle", admin.NewItem)
+		// Add new item form
+		adminRoutes.POST("/add", admin.Add)
+		// Edit blog
+		adminRoutes.GET("/edit/:id", admin.Edit)
+		// Delete blog
+		adminRoutes.GET("/delete/:id", admin.Delete)
+		// Update blog
+		adminRoutes.POST("/update/:id", admin.Update)
 
-	//css kaynakları kullanmak için
-	r.ServeFiles("/admin/assets/*filepath", http.Dir("admin/assets")) //admin/assets/*tüm dosyalar gelise admin/assets yönlendir
-	r.ServeFiles("/site/assets/*filepath", http.Dir("site/assets"))   //site/assets/*tüm dosyalar gelise site/assets yönlendir
-	r.ServeFiles("/uploads/*filepath", http.Dir("uploads"))
+		// Admin login
+		adminRoutes.GET("/login", userops.Index)
+		// Admin login form
+		adminRoutes.POST("/do-login", userops.Login)
+		// Admin logout
+		adminRoutes.GET("/logout", userops.Logout)
+
+		// Admin categories
+		adminRoutes.GET("/kategoriler/", categories.Index)
+		adminRoutes.POST("/kategoriler/add", categories.Add)
+		adminRoutes.GET("/kategoriler/delete/:id", categories.Delete)
+	}
+
+	// Site routes
+	siteRoutes := r.Group("/")
+	{
+		homepage := site.Homepage{}
+
+		// Homepage
+		siteRoutes.GET("/", homepage.Index)
+		// Blog details
+		siteRoutes.GET("/yazilar/:slug", homepage.Detail)
+	}
+
 	return r
 }

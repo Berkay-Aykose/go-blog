@@ -3,31 +3,35 @@ package helpers
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 )
 
 var store = sessions.NewCookieStore([]byte("123456789"))
 
-func SetAlert(w http.ResponseWriter, r *http.Request, message string) error {
-	session, err := store.Get(r, "go-alert")
+func SetAlert(c *gin.Context, message string) error {
+	session, err := store.Get(c.Request, "go-alert")
 	if err != nil {
-		println(err)
+		c.String(http.StatusInternalServerError, err.Error())
 		return err
 	}
 	session.AddFlash(message)
-
-	return sessions.Save(r, w)
+	err = session.Save(c.Request, c.Writer)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return err
+	}
+	return nil
 }
 
-func GetAlert(w http.ResponseWriter, r *http.Request) map[string]interface{} {
-	session, err := store.Get(r, "go-alert")
+func GetAlert(c *gin.Context) map[string]interface{} {
+	session, err := store.Get(c.Request, "go-alert")
 	if err != nil {
-		println(err)
+		c.String(http.StatusInternalServerError, err.Error())
 		return nil
 	}
 
 	data := make(map[string]interface{})
-
 	flashes := session.Flashes()
 
 	if len(flashes) > 0 {
@@ -38,7 +42,11 @@ func GetAlert(w http.ResponseWriter, r *http.Request) map[string]interface{} {
 		data["message"] = nil
 	}
 
-	session.Save(r, w)
+	err = session.Save(c.Request, c.Writer)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return nil
+	}
 
 	return data
 }

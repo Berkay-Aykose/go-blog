@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/gin-gonic/gin"
 )
 
 type Userops struct{}
 
-func (userops Userops) Index(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func (userops Userops) Index(c *gin.Context) {
 	view, err := template.ParseFiles(helpers.Include("userops/login")...)
 
 	if err != nil {
@@ -22,29 +22,29 @@ func (userops Userops) Index(w http.ResponseWriter, r *http.Request, params http
 	}
 
 	data := make(map[string]interface{})
-	data["Alert"] = helpers.GetAlert(w, r)
-	view.ExecuteTemplate(w, "index", data)
+	data["Alert"] = helpers.GetAlert(c)
+	view.ExecuteTemplate(c.Writer, "index", data)
 }
 
-func (userops Userops) Login(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	username := r.FormValue("username")
-	password := fmt.Sprintf("%x", sha256.Sum256([]byte(r.FormValue("password"))))
+func (userops Userops) Login(c *gin.Context) {
+	username := c.PostForm("username")
+	password := fmt.Sprintf("%x", sha256.Sum256([]byte(c.PostForm("password"))))
 
 	user := models.User{}.Get("username = ? AND password = ?", username, password)
 
 	if (user.Username == username) && (user.Password == password) {
-		helpers.SetUser(w, r, username, password)
-		helpers.SetAlert(w, r, "Hoşgeldiniz...")
-		http.Redirect(w, r, "/admin", http.StatusSeeOther)
+		helpers.SetUser(c, username, password)
+		helpers.SetAlert(c, "Hoşgeldiniz...")
+		c.Redirect(http.StatusSeeOther, "/admin")
 	} else {
-		helpers.SetAlert(w, r, "yanlış Kullanıcı Adı veya Şifre...")
-		http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+		helpers.SetAlert(c, "yanlış Kullanıcı Adı veya Şifre...")
+		c.Redirect(http.StatusSeeOther, "/admin/login")
 	}
 }
 
-func (userops Userops) Logout(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	helpers.RemoveUser(w, r)
-	helpers.SetAlert(w, r, "Hoşçakalın...")
-	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+func (userops Userops) Logout(c *gin.Context) {
+	helpers.RemoveUser(c)
+	helpers.SetAlert(c, "Hoşçakalın...")
+	c.Redirect(http.StatusSeeOther, "/admin/login")
 
 }

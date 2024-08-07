@@ -4,16 +4,15 @@ import (
 	"fmt"
 	"goblog/site/helpers"
 	"goblog/site/models"
-	"net/http"
 	"text/template"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/gin-gonic/gin"
 )
 
 type Homepage struct{}
 
-func (homepage Homepage) Index(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func (homepage Homepage) Index(c *gin.Context) {
 	view, err := template.New("index").Funcs(template.FuncMap{
 		"getCategory": func(categoryID int) string {
 			return models.Category{}.Get(categoryID).Title
@@ -28,10 +27,10 @@ func (homepage Homepage) Index(w http.ResponseWriter, r *http.Request, params ht
 
 	data := make(map[string]interface{})
 	data["Post"] = models.Post{}.GetAll()
-	view.ExecuteTemplate(w, "index", data)
+	view.ExecuteTemplate(c.Writer, "index", data)
 }
 
-func (homepage Homepage) Detail(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func (homepage Homepage) Detail(c *gin.Context) {
 	view, err := template.ParseFiles(helpers.Include("homepage/detail")...)
 	if err != nil {
 		fmt.Println(err)
@@ -39,7 +38,7 @@ func (homepage Homepage) Detail(w http.ResponseWriter, r *http.Request, params h
 	}
 
 	data := make(map[string]interface{})
-	slug := params.ByName("slug")
+	slug := c.Params.ByName("slug")
 	data["Post"] = models.Post{}.Get("slug = ?", slug)
-	view.ExecuteTemplate(w, "detail", data)
+	view.ExecuteTemplate(c.Writer, "detail", data)
 }

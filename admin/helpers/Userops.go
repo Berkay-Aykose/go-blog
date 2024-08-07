@@ -2,13 +2,13 @@ package helpers
 
 import (
 	"goblog/admin/models"
-	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 )
 
-func SetUser(w http.ResponseWriter, r *http.Request, username string, password string) error {
-	session, err := store.Get(r, "blog-user")
+func SetUser(c *gin.Context, username string, password string) error {
+	session, err := store.Get(c.Request, "blog-user")
 	if err != nil {
 		println(err)
 		return err
@@ -16,11 +16,11 @@ func SetUser(w http.ResponseWriter, r *http.Request, username string, password s
 	session.Values["username"] = username
 	session.Values["password"] = password
 
-	return sessions.Save(r, w)
+	return sessions.Save(c.Request, c.Writer)
 }
 
-func CheckUser(w http.ResponseWriter, r *http.Request) bool {
-	session, err := store.Get(r, "blog-user")
+func CheckUser(c *gin.Context) bool {
+	session, err := store.Get(c.Request, "blog-user")
 	if err != nil {
 		println(err)
 		return false
@@ -36,8 +36,8 @@ func CheckUser(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-func RemoveUser(w http.ResponseWriter, r *http.Request) error {
-	session, err := store.Get(r, "blog-user")
+func RemoveUser(c *gin.Context) error {
+	session, err := store.Get(c.Request, "blog-user")
 	if err != nil {
 		println(err)
 		return err
@@ -45,5 +45,5 @@ func RemoveUser(w http.ResponseWriter, r *http.Request) error {
 
 	session.Options.MaxAge = -1
 
-	return sessions.Save(r, w)
+	return sessions.Save(c.Request, c.Writer)
 }
